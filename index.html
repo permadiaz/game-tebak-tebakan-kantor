@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Game Tebak-tebakan Kantor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#e9edf1; --bg2:#dde4ea; --surface:#ffffff; --surface2:#f6f7f9;
+    --ink:#17202e; --muted:#5b6779; --line:#d7dee6;
+    --yellow:#ffc91f; --yellow-ink:#3a2e00; --coral:#ff5a4e; --teal:#0e9a8b; --blue:#2456d6; --green:#1a9e4b; --red:#e23b2e;
+    --shadow:0 10px 30px rgba(23,32,46,.12); --radius:18px;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#10141c; --bg2:#0b0e14; --surface:#1c2330; --surface2:#242d3f;
+      --ink:#f0f3f8; --muted:#a7b2c2; --line:#333f55;
+      --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Plus Jakarta Sans",system-ui,sans-serif; background:var(--bg); color:var(--ink);
+    background-image:radial-gradient(var(--line) 1px, transparent 1px); background-size:22px 22px;
+    min-height:100vh;
+  }
+  button{font-family:inherit; min-height:48px; cursor:pointer}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+  /* HERO */
+  .hero{position:relative;margin-top:6px}
+  .sticky{
+    background:var(--yellow); color:var(--yellow-ink); padding:22px 20px 20px; border-radius:6px 6px 18px 6px;
+    box-shadow:var(--shadow); transform:rotate(-1.2deg); position:relative;
+  }
+  .sticky::before{content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%) rotate(2deg);width:110px;height:22px;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.06);border-radius:2px}
+  .sticky h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:clamp(32px,7vw,52px);line-height:.95;margin:6px 0 10px;letter-spacing:-.02em;text-transform:uppercase}
+  .sticky p{margin:0;font-size:16px;line-height:1.55;font-weight:600;max-width:52ch}
+  .tape-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:7px 11px;border-radius:999px}
+  .chip.light{background:rgba(0,0,0,.12);color:var(--yellow-ink)}
+  .sub{margin:18px 2px 0;color:var(--muted);font-size:15px;line-height:1.6}
+  .sub b{color:var(--ink)}
+  /* MODE GRID */
+  .section-label{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:28px 2px 12px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.modes{grid-template-columns:1fr}}
+  .mode{
+    text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);
+    padding:18px;display:flex;flex-direction:column;gap:6px;transition:transform .12s,border-color .12s;min-height:132px;
+  }
+  .mode:hover{transform:translateY(-2px)}
+  .mode:active{transform:scale(.99)}
+  .mode .tag{align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;border-radius:999px;color:#fff}
+  .tag.campuran{background:var(--coral)} .tag.singkatan{background:var(--blue)} .tag.situasi{background:var(--teal)} .tag.logika{background:#8a5cf6}
+  .mode h3{margin:2px 0 0;font-family:"Bricolage Grotesque",sans-serif;font-size:21px;line-height:1.1}
+  .mode p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5}
+  .mode .count{margin-top:auto;font-size:12px;font-weight:700;color:var(--muted)}
+  .how{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 8px;margin-top:14px}
+  .how h4{margin:0 0 10px;font-size:15px}
+  .how ol{margin:0;padding-left:20px;color:var(--muted);font-size:14px;line-height:1.7}
+  .how ol b{color:var(--ink)}
+  .bestbar{margin-top:14px;display:none;background:var(--surface2);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;font-weight:600;color:var(--muted)}
+  .bestbar b{color:var(--ink)}
+  .cachebar{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.55;color:var(--muted)}
+  .cachebar b{color:var(--ink)}
+  .cachebar .resetbtn{flex:0 0 auto;min-height:40px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface2);color:var(--ink);font-size:13px;font-weight:800}
+  .cachebar .resetbtn:hover{border-color:var(--ink)}
+  /* GAME */
+  .hidden{display:none !important}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-bottom:12px}
+  .hud .box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 13px;flex:1;min-width:96px}
+  .hud .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .hud .v{font-family:"Bricolage Grotesque",sans-serif;font-size:22px;line-height:1;margin-top:3px}
+  .hud .box.streak .v{color:var(--coral)}
+  .progress{height:10px;background:var(--surface2);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-bottom:8px}
+  .progress i{display:block;height:100%;background:var(--teal);width:0%;transition:width .35s}
+  .timerbar{height:6px;background:var(--surface2);border-radius:999px;overflow:hidden;margin-bottom:16px}
+  .timerbar i{display:block;height:100%;background:var(--yellow);width:100%}
+  .timerbar i.low{background:var(--red)}
+  .qcard{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
+  .qmeta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .qcat{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;padding:5px 10px;border-radius:999px}
+  .qnum{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .qtext{font-family:"Bricolage Grotesque",sans-serif;font-size:clamp(21px,4.6vw,27px);line-height:1.25;margin:0 0 6px}
+  .qsub{color:var(--muted);font-size:14px;line-height:1.55;margin:0 0 18px}
+  .opts{display:grid;gap:10px}
+  .opt{
+    text-align:left;background:var(--surface2);border:2px solid var(--line);border-radius:14px;padding:14px 15px;
+    font-size:15.5px;font-weight:600;line-height:1.45;display:flex;gap:12px;align-items:flex-start;width:100%;
+  }
+  .opt .letter{flex:0 0 auto;width:28px;height:28px;border-radius:8px;background:var(--surface);border:1.5px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:800;margin-top:1px}
+  .opt:not(:disabled):hover{border-color:var(--ink)}
+  .opt.correct{background:#e6f7ec;border-color:var(--green);color:#0d4d24}
+  .opt.correct .letter{background:var(--green);color:#fff;border-color:var(--green)}
+  .opt.wrong{background:#fdecea;border-color:var(--red);color:#7a1710}
+  .opt.wrong .letter{background:var(--red);color:#fff;border-color:var(--red)}
+  .opt.dim{opacity:.55}
+  @media (prefers-color-scheme: dark){
+    .opt.correct{background:#14301f;color:#b9f0cb}.opt.wrong{background:#3a1a16;color:#ffc4bd}
+  }
+  .feedback{margin-top:16px;border-radius:14px;padding:15px 16px;font-size:14.5px;line-height:1.6;display:none}
+  .feedback.show{display:block}
+  .feedback.ok{background:#e6f7ec;border:1.5px solid var(--green);color:#0d4d24}
+  .feedback.no{background:#fdecea;border:1.5px solid var(--red);color:#7a1710}
+  @media (prefers-color-scheme: dark){.feedback.ok{background:#14301f;color:#b9f0cb}.feedback.no{background:#3a1a16;color:#ffc4bd}}
+  .feedback b{display:block;font-size:15px;margin-bottom:2px}
+  .nextbtn{margin-top:14px;width:100%;background:var(--ink);color:var(--bg);border:none;border-radius:14px;font-size:16px;font-weight:800;padding:6px 16px;display:none}
+  .nextbtn.show{display:block}
+  .quitrow{margin-top:14px;text-align:center}
+  .quit{background:none;border:none;color:var(--muted);font-size:13.5px;font-weight:700;text-decoration:underline;min-height:40px;padding:8px 14px}
+  /* RESULT */
+  .result{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:26px 22px;box-shadow:var(--shadow);text-align:center;position:relative;overflow:hidden}
+  .result .kicker{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .gelar{font-family:"Bricolage Grotesque",sans-serif;font-size:clamp(30px,7vw,44px);line-height:1.02;margin:10px 0 8px;text-transform:uppercase}
+  .result .desc{color:var(--muted);font-size:15px;line-height:1.65;max-width:46ch;margin:0 auto}
+  .bigscore{font-family:"Bricolage Grotesque",sans-serif;font-size:64px;line-height:1;margin:20px 0 2px}
+  .bigscore small{font-size:16px;color:var(--muted);font-family:"Plus Jakarta Sans",sans-serif;font-weight:700}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 4px}
+  @media(max-width:480px){.stats{grid-template-columns:1fr 1fr 1fr;gap:8px}}
+  .stat{background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:13px 8px}
+  .stat .v{font-family:"Bricolage Grotesque",sans-serif;font-size:24px}
+  .stat .k{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .actions{display:grid;gap:10px;margin-top:20px}
+  .btn{border-radius:14px;font-size:15.5px;font-weight:800;padding:6px 16px;border:2px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+  .btn.primary{background:var(--yellow);border-color:#e0aa00;color:var(--yellow-ink)}
+  .btn.dark{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .review{margin-top:22px;text-align:left}
+  .review h4{margin:0 0 10px;font-size:15px}
+  .ritem{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:var(--surface2);font-size:13.5px;line-height:1.55}
+  .ritem .rq{font-weight:700}
+  .ritem .ra{color:var(--muted)} .ritem .ra b.ok{color:var(--green)} .ritem .ra b.no{color:var(--red)}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:999px;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:92vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .confetti{position:absolute;width:9px;height:14px;top:-16px;border-radius:2px;animation:fall linear forwards;pointer-events:none}
+  @keyframes fall{to{transform:translateY(560px) rotate(560deg);opacity:.9}}
+  @media (prefers-reduced-motion: reduce){.confetti{animation:none;display:none}.mode{transition:none}}
+  .foot{margin-top:26px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6}
+  /* STAGES */
+  .stages{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.stages{grid-template-columns:1fr}}
+  .stage{
+    text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;display:flex;gap:14px;align-items:flex-start;width:100%;transition:transform .12s,border-color .12s;
+  }
+  .stage:not(:disabled):hover{transform:translateY(-2px);border-color:var(--ink)}
+  .stage:disabled{opacity:.62;cursor:not-allowed}
+  .stage .num{flex:0 0 auto;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-family:"Bricolage Grotesque",sans-serif;font-size:20px;color:#fff;background:var(--teal)}
+  .stage.s1 .num{background:#0e9a8b}.stage.s2 .num{background:#1a9e4b}.stage.s3 .num{background:#2456d6}.stage.s4 .num{background:#7c3aed}.stage.s5 .num{background:#db2777}
+  .stage.s6 .num{background:#ea580c}.stage.s7 .num{background:#b45309}.stage.s8 .num{background:#0f766e}.stage.s9 .num{background:#1d4ed8}.stage.s10 .num{background:#17202e}
+  .stage>span:last-child{flex:1;display:block;min-width:0}
+  .stage h3{margin:0;font-family:"Bricolage Grotesque",sans-serif;font-size:18px;line-height:1.15}
+  .stage p{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+  .stage .meta{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+  .pill{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+  .pill.done{background:#e6f7ec;border-color:var(--green);color:#0d4d24}
+  .pill.lock{background:var(--surface2)}
+  @media (prefers-color-scheme: dark){.pill.done{background:#14301f;color:#b9f0cb}}
+  .stage-banner{margin:0 0 14px;border-radius:14px;padding:14px 16px;font-size:14.5px;line-height:1.6;display:none;text-align:left}
+  .stage-banner.show{display:block}
+  .stage-banner.pass{background:#e6f7ec;border:1.5px solid var(--green);color:#0d4d24}
+  .stage-banner.fail{background:#fff4d6;border:1.5px solid #e0aa00;color:#5c4300}
+  @media (prefers-color-scheme: dark){.stage-banner.pass{background:#14301f;color:#b9f0cb}.stage-banner.fail{background:#332a08;color:#ffe9a3}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HOME -->
+  <section id="view-home">
+    <div class="hero">
+      <div class="sticky">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.14em">ISTIRAHAT DULU • JANGAN SERIUS-SERIUS</div>
+        <h1>Tebak-Tebakan Kantor</h1>
+        <p>100 soal receh soal singkatan, kode-kode bos, dan logika absurd dunia kerja — sekarang ada stage karirnya, dari magang sampai direktur. Yang kalah traktir kopi — atur sendiri sama tim lo.</p>
+        <div class="tape-row">
+          <span class="chip">100 soal total</span>
+          <span class="chip light">10 stage karir</span>
+          <span class="chip light">20 detik / soal</span>
+          <span class="chip light">Ada gelar akhir</span>
+        </div>
+      </div>
+      <p class="sub">Ada dua cara main: <b>Mode Stage</b> buat naik karir stage demi stage, atau <b>mode bebas</b> 10 soal acak. Jawaban bener dapet poin, <b>streak</b> bikin poin makin gede, jawaban salah dapet… penjelasan yang kadang lebih nyelekit dari revisi bos. Buat lulus stage, lo butuh minimal <b>6 jawaban bener dari 10</b>. Progres stage &amp; skor terbaik lo <b>kesimpan otomatis di browser ini</b> — reload atau tutup tab, yang udah kebuka tetap kebuka.</p>
+    </div>
+
+    <div class="section-label">Mode stage — naik karir dari magang sampai direktur</div>
+    <p style="margin:0 2px 12px;color:var(--muted);font-size:14px;line-height:1.6">Tiap stage isinya <b style="color:var(--ink)">10 soal</b> dengan tema &amp; tingkat ngeselin yang naik terus. Lulus stage (minimal 6 bener) buat buka stage berikutnya. Progresnya kesimpan di cache browser ini, jadi nggak ke-reset pas reload. Stage 1 langsung kebuka — sisanya lo buktiin sendiri.</p>
+    <div class="stages" id="stage-map"></div>
+    <div class="cachebar" id="cachebar">
+      <span><b>Tersimpan otomatis.</b> Stage yang udah lulus &amp; skor terbaik lo disimpan di browser ini. Ganti browser / HP atau hapus data browser = progres ikut ke-reset.</span>
+      <button type="button" class="resetbtn" id="resetProgressBtn">Reset progres</button>
+    </div>
+
+    <div class="section-label">Mode bebas — 10 soal acak</div>
+    <div class="modes">
+      <button class="mode" data-mode="campuran">
+        <span class="tag campuran">Paling rame</span>
+        <h3>Campuran Acak</h3>
+        <p>Semua kategori dicampur. Cocok buat main bareng pas lagi nunggu meeting mulai.</p>
+        <span class="count">10 soal acak dari 100 soal</span>
+      </button>
+      <button class="mode" data-mode="singkatan">
+        <span class="tag singkatan">Bahasa korporat</span>
+        <h3>Tebak Singkatan</h3>
+        <p>KPI, EOD, OOO, FYI — lo beneran paham, atau selama ini cuma pura-pura paham?</p>
+        <span class="count">10 soal dari 34 soal singkatan</span>
+      </button>
+      <button class="mode" data-mode="situasi">
+        <span class="tag situasi">Baca situasi</span>
+        <h3>Tebak Situasi</h3>
+        <p>“Meeting 5 menit”, “kita keluarga di sini”, “per my last email”. Terjemahkan maksud aslinya.</p>
+        <span class="count">10 soal dari 33 soal situasi</span>
+      </button>
+      <button class="mode" data-mode="logika">
+        <span class="tag logika">Receh</span>
+        <h3>Logika Receh</h3>
+        <p>Tebak-tebakan klasik versi anak kantor. Otak boleh istirahat, yang penting ketawa.</p>
+        <span class="count">10 soal dari 33 soal logika &amp; plesetan</span>
+      </button>
+    </div>
+
+    <div class="how">
+      <h4>Cara mainnya</h4>
+      <ol>
+        <li>Pilih <b>stage</b> atau mode bebas, terus jawab tiap soal sebelum <b>20 detik</b> habis.</li>
+        <li>Jawaban bener: <b>+100 poin</b>, plus bonus waktu &amp; bonus streak kalau bener beruntun.</li>
+        <li>Waktu habis dianggap salah. Nggak bisa ganti jawaban, kayak deadline — sekali kirim, ya udah.</li>
+        <li>Di mode stage: <b>minimal 6/10 bener = lulus</b> dan stage berikutnya kebuka. Di bawah itu, ulang stage-nya.</li>
+        <li>Selesai 10 soal, lo dapet gelar + ringkasan buat <b>disalin dan pamer ke grup</b>.</li>
+      </ol>
+    </div>
+
+    <div class="bestbar" id="bestbar">Skor terbaik lo: <b id="bestscore">0</b> — <span id="bestgelar"></span></div>
+    <p class="foot">Dibuat buat jeda 3 menit di antara meeting yang harusnya bisa jadi chat itu.</p>
+  </section>
+
+  <!-- GAME -->
+  <section id="view-game" class="hidden">
+    <div class="hud">
+      <div class="box"><div class="k" id="hud-stage-k">Mode</div><div class="v" id="hud-stage" style="font-size:16px;line-height:1.2">Bebas</div></div>
+      <div class="box"><div class="k">Skor</div><div class="v" id="hud-score">0</div></div>
+      <div class="box streak"><div class="k">Streak 🔥</div><div class="v" id="hud-streak">0x</div></div>
+      <div class="box"><div class="k">Soal</div><div class="v" id="hud-q">1/10</div></div>
+    </div>
+    <div class="progress"><i id="prog"></i></div>
+    <div class="timerbar"><i id="timer"></i></div>
+
+    <div class="qcard">
+      <div class="qmeta">
+        <span class="qcat" id="q-cat">Campuran</span>
+        <span class="qnum" id="q-num">Soal 1 dari 10</span>
+      </div>
+      <h2 class="qtext" id="q-text"></h2>
+      <p class="qsub" id="q-sub"></p>
+      <div class="opts" id="opts"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nextbtn" id="nextbtn">Lanjut →</button>
+    </div>
+    <div class="quitrow"><button class="quit" id="quitbtn">Berhenti, balik ke menu</button></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="view-result" class="hidden">
+    <div class="result" id="result-card">
+      <div class="stage-banner" id="stage-banner"></div>
+      <div class="kicker">Gelar kantor resmi lo</div>
+      <div class="gelar" id="r-gelar">—</div>
+      <p class="desc" id="r-desc">—</p>
+      <div class="bigscore"><span id="r-score">0</span> <small>poin</small></div>
+      <div class="stats">
+        <div class="stat"><div class="v" id="r-correct">0/10</div><div class="k">Jawaban bener</div></div>
+        <div class="stat"><div class="v" id="r-acc">0%</div><div class="k">Akurasi</div></div>
+        <div class="stat"><div class="v" id="r-streak">0x</div><div class="k">Streak terbaik</div></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary hidden" id="nextstagebtn">Lanjut ke stage berikutnya →</button>
+        <button class="btn primary" id="againbtn">Main lagi — mode yang sama</button>
+        <button class="btn" id="copybtn">Salin hasil buat pamer ke grup</button>
+        <button class="btn dark" id="menubtn">Ganti mode / stage</button>
+      </div>
+      <div class="review">
+        <h4>Bedah jawaban lo</h4>
+        <div id="review-list"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var BANK = [
+/* ---------- SINGKATAN ---------- */
+{cat:"singkatan",q:"KPI itu kepanjangan dari…",sub:"Singkatan yang menentukan nasib bonus tahunan lo.",opts:["Key Performance Indicator","Kumpulan Pekerja Indonesia","Kantor Penuh Intrik","Keyakinan Pasti Impas"],ans:0,why:"KPI = Key Performance Indicator. Indikator yang katanya objektif, tapi tetap bikin deg-degan tiap kuartal."},
+{cat:"singkatan",q:"Bos nulis “EOD” di chat. Maksudnya lo harus selesai…",sub:"Tiga huruf yang sering muncul jam 4 sore.",opts:["End of Decade — santai aja","End of Day — sebelum hari ini berakhir","End of Drama — udahan dramanya","Every Other Day — dua hari sekali"],ans:1,why:"EOD = End of Day. Artinya: hari ini juga, bukan besok, bukan “nanti kalau sempat”."},
+{cat:"singkatan",q:"Status Slack temen lo “OOO”. Artinya dia…",sub:"Biasanya disertai emoji palem atau pesawat.",opts:["Online On Office","Out of Office — lagi nggak di kantor / cuti","Out of Order — orangnya rusak","Only Open Occasionally"],ans:1,why:"OOO = Out of Office. Jangan kirim “URGENT!!!” ke orang OOO, pesannya bakal dibaca pas dia udah balik — dengan sisa liburan yang masih kebawa."},
+{cat:"singkatan",q:"“FYI” di awal email artinya…",sub:"Singkatan paling pasif-agresif nomor dua setelah “per my last email”.",opts:["For Your Information — sekadar info buat lo","For Your Inspection — periksa sekarang juga","Follow Your Instinct","Free Your Imagination"],ans:0,why:"FYI = For Your Information. Kedengarannya info doang, tapi seringnya artinya: “ini tanggung jawab lo sekarang, gue udah lempar.”"},
+{cat:"singkatan",q:"PIC dalam sebuah project artinya…",sub:"Orang yang namanya disebut pertama kalau ada apa-apa.",opts:["Picture — yang motoin acara","Person in Charge — penanggung jawab","Please Ignore Chat","Paling Ingin Cepat-cepat pulang"],ans:1,why:"PIC = Person in Charge. Gelar kehormatan yang artinya: semua pertanyaan dan semua kesalahan arahnya ke lo."},
+{cat:"singkatan",q:"MoM hasil meeting itu singkatan dari…",sub:"Dokumen yang dibaca semua orang… katanya.",opts:["Month over Month","Minutes of Meeting — notulen rapat","Master of Multitasking","Memo of Misunderstanding"],ans:1,why:"MoM = Minutes of Meeting. Bukti tertulis bahwa meeting itu beneran terjadi dan keputusan itu beneran diambil (walau minggu depan ditanya lagi)."},
+{cat:"singkatan",q:"Kalau HR bilang dokumennya butuh NDA, itu singkatan dari…",sub:"Yang ditandatangani sebelum lo boleh tau apa-apa.",opts:["Non-Disclosure Agreement — perjanjian kerahasiaan","National Data Archive","No Drama Allowed","Nota Dinas Asli"],ans:0,why:"NDA = Non-Disclosure Agreement. Intinya: apa yang lo liat di dokumen ini, jangan dibawa ke tongkrongan."},
+{cat:"singkatan",q:"“ASAP” dari bos artinya…",sub:"Singkatan yang membatalkan semua rencana lo sore ini.",opts:["As Slow As Possible","As Soon As Possible — secepatnya","As Simple As Pie","Always Send A Picture"],ans:1,why:"ASAP = As Soon As Possible. Level urgensinya tergantung huruf kapital dan jumlah tanda seru yang nyusul."},
+{cat:"singkatan",q:"THR yang ditunggu-tunggu tiap tahun itu singkatan dari…",sub:"Satu-satunya singkatan yang bikin semua orang senyum.",opts:["Tunjangan Hari Raya","Tabungan Hari Rabu","Tugas Harian Rutin","Tawaran Harga Rendah"],ans:0,why:"THR = Tunjangan Hari Raya. Singkatan paling dicintai se-Indonesia, ngalahin semua singkatan korporat lainnya."},
+{cat:"singkatan",q:"SLA dalam kontrak layanan itu singkatan dari…",sub:"Yang dilanggar diam-diam, ditagih ramai-ramai.",opts:["Service Level Agreement — kesepakatan level layanan","Sistem Lembur Abadi","Surat Lamaran Asli","Standard Language of Apology"],ans:0,why:"SLA = Service Level Agreement. Janji tertulis soal seberapa cepat dan seberapa bagus layanan harus jalan."},
+{cat:"singkatan",q:"WFO lawan katanya WFH. WFO artinya…",sub:"Yang bikin alarm jam 5 pagi relevan lagi.",opts:["Work From Office — kerja dari kantor","Work For Others","Waiting For Overtime","Work, Food, Out"],ans:0,why:"WFO = Work From Office. WFH = Work From Home. Perdebatan soal mana yang lebih produktif masih berlangsung sampai hari ini."},
+{cat:"singkatan",q:"Di slip gaji ada potongan “BPJS”. Itu singkatan dari…",sub:"Potongan yang lo syukuri pas lagi sakit doang.",opts:["Badan Penyelenggara Jaminan Sosial","Bonus Pegawai Jelang Senja","Badan Pengelola Jadwal Shift","Biaya Parkir dan Jajan Siang"],ans:0,why:"BPJS = Badan Penyelenggara Jaminan Sosial. Yang motong gaji lo tiap bulan itu, buat jaminan kesehatan dan ketenagakerjaan."},
+/* ---------- SITUASI ---------- */
+{cat:"situasi",q:"Bos bilang: “Meeting sebentar aja, 5 menit.” Terjemahan paling akurat:",sub:"Jam di dinding kantor tidak pernah bohong soal ini.",opts:["Beneran 5 menit, pulang cepat","Minimal 45 menit, siapkan mental dan cemilan","5 menit per orang yang hadir","5 menit waktu bumi, entah di planet dia"],ans:1,why:"“Sebentar, 5 menit” adalah satuan waktu fiksi kantor. Rekor terpendek yang pernah tercatat: 40 menit plus satu topik “oh iya, sekalian…”."},
+{cat:"situasi",q:"Email dibuka dengan “Per my last email…” Artinya penulisnya…",sub:"Bahasa Inggris korporat untuk sesuatu yang sangat Indonesia.",opts:["Lagi bernostalgia sama email lamanya","Udah nulis ini sebelumnya dan lo nggak baca — dia kesal, tapi profesional","Minta emailnya diteruskan","Lupa pernah kirim email"],ans:1,why:"“Per my last email” = “sesuai email gue sebelumnya (yang lo abaikan)”. Kesal level maksimal, dibungkus tata bahasa sempurna."},
+{cat:"situasi",q:"Di grup kerja, seseorang cuma membalas “Siap, noted.” Kemungkinan besar artinya:",sub:"Dua kata paling serbaguna di dunia kerja.",opts:["Udah dikerjain dan selesai","Baru dibaca sekilas, bakal dibaca beneran nanti (mungkin)","Nggak setuju tapi males debat","Lagi ngetik balasan panjang"],ans:1,why:"“Siap, noted” = diterima, dicatat, dan masuk antrean entah kapan. Kalau beneran urgent, orang bakal nanya balik — bukan cuma noted."},
+{cat:"situasi",q:"“Di sini kita keluarga.” — kalimat ini paling sering muncul tepat sebelum…",sub:"Dengarkan baik-baik konteksnya.",opts:["Acara makan-makan gratis","Pengumuman soal lembur / kerja ekstra tanpa bayaran ekstra","Pembagian bonus besar","Libur bersama tambahan"],ans:1,why:"Keluarga memang saling bantu. Tapi entah kenapa, kalimat ini paling sering jadi pembuka buat lembur, bukan buat bonus."},
+{cat:"situasi",q:"Printer kantor rusak jam 16.55 di hari Jumat. Yang terjadi selanjutnya:",sub:"Fenomena ini terjadi di semua kantor di dunia.",opts:["IT langsung datang dan beres 5 menit","Semua orang kompak pura-pura nggak lihat dan pulang","Printer-nya sembuh sendiri karena weekend","Bos yang benerin sendiri"],ans:1,why:"Masalah jam 16.55 hari Jumat secara hukum alam kantor berubah jadi masalah hari Senin. Semua orang tau, nggak ada yang ngaku."},
+{cat:"situasi",q:"“Nanti gue CC-in ya.” Maksud tersembunyi dari CC atasan ke email lo:",sub:"CC: kolom kecil, efek besar.",opts:["Biar atasan ikut senang baca email lo","Biar ada saksi — dan tekanan — supaya lo gerak","Salah ketik, harusnya BCC","Biar emailnya keliatan resmi"],ans:1,why:"CC atasan = lampu sorot. Tiba-tiba email yang tadinya bisa dijawab besok, jadi dijawab dalam 4 menit."},
+{cat:"situasi",q:"Meeting dijadwalkan “30 menit”, tapi ada 14 orang dan 9 agenda. Kesimpulannya:",sub:"Matematika tidak pernah berbohong, jadwal meeting iya.",opts:["Bakal selesai tepat waktu karena semua efisien","Pasti molor, dan bakal ada meeting lanjutan buat bahas meeting ini","Agendanya otomatis mengecil","Semua orang bicara 2 menit pas"],ans:1,why:"9 agenda ÷ 30 menit dengan 14 orang = mustahil. Hasil resminya: satu meeting baru berjudul “Follow-up”."},
+{cat:"situasi",q:"Temen kantor bilang “gue izin WFH ya, agak nggak enak badan”, lalu jam 12 siang dia posting story lagi di kafe. Artinya:",sub:"Kasus klasik yang menguji persahabatan kantor.",opts:["Kafenya punya obat yang manjur","“Nggak enak badan” versi sosial — dia butuh ganti suasana, dan itu valid, tapi jangan posting","Dia lagi meeting sama klien di kafe","Itu story lama yang baru ke-upload"],ans:1,why:"Pelajaran nomor satu WFH: kalau lagi “sakit”, media sosial lo ikut sakit. Jangan posting apa-apa. Titik."},
+{cat:"situasi",q:"“Ini revisi terakhir ya.” Berapa revisi lagi yang realistis setelah kalimat itu?",sub:"Hitung dari pengalaman, bukan dari harapan.",opts:["Nol, ini beneran terakhir","Satu, paling banter","Minimal tiga, plus satu “eh, balik ke versi awal aja”","Revisinya selesai karena project-nya dibatalkan"],ans:2,why:"“Revisi terakhir” adalah revisi nomor sekian dari seri yang belum tamat. Puncaknya selalu: “balik ke yang pertama aja deh.”"},
+{cat:"situasi",q:"Jam 17.02, bos chat: “Lagi sibuk nggak?” Jawaban paling aman secara strategis:",sub:"Pertanyaan jebakan level bos terakhir.",opts:["“Nggak kok Pak/Bu” — lalu terima nasib","“Lagi beresin yang tadi, kenapa ya Pak/Bu?” — sopan, tapi beli waktu buat denger dulu maunya apa","Nggak usah dibalas sampai besok pagi","“Sibuk banget” — jujur adalah kunci"],ans:1,why:"“Lagi sibuk nggak?” jam 5 sore bukan pertanyaan, itu pengantar tugas. Jawab dengan konteks bikin lo tetap sopan tanpa langsung bilang iya ke sesuatu yang belum lo denger."},
+{cat:"situasi",q:"Kantin kantor tiba-tiba naikin harga Rp2.000. Reaksi universal anak kantor:",sub:"Inflasi paling terasa justru di sini.",opts:["Biasa aja, cuma Rp2.000","Heboh di grup, dibahas 3 hari, tetap beli juga","Boikot total selamanya","Nggak ada yang sadar"],ans:1,why:"Kenaikan harga kantin adalah krisis nasional skala kantor. Dibahas panjang lebar… sambil tetap antre di kasir yang sama."},
+{cat:"situasi",q:"Seseorang bilang “nanti kita touch base lagi ya” di akhir meeting. Artinya:",sub:"Bahasa korporat untuk menunda dengan elegan.",opts:["Bakal ada lomba lari estafet","Belum ada keputusan — bakal ngobrol lagi entah kapan","Semua udah sepakat dan selesai","Meeting-nya pindah ke lapangan"],ans:1,why:"“Touch base” = ngobrol lagi nanti. Terjemahan bebasnya: meeting ini selesai tanpa kesimpulan, sampai jumpa di meeting berikutnya."},
+/* ---------- LOGIKA RECEH ---------- */
+{cat:"logika",q:"Apa yang selalu naik, tapi nggak pernah turun?",sub:"Pikirkan baik-baik. Jawabannya menyebalkan karena benar.",opts:["Harga bensin","Umur","Saham","Semangat hari Senin"],ans:1,why:"Umur. Satu-satunya angka di hidup lo yang grafiknya nggak pernah merah."},
+{cat:"logika",q:"Kenapa komputer dibawa ke dokter?",sub:"Tebak-tebakan bapak-bapak level dewa.",opts:["Layarna retak","Kena virus","Kelebihan beban pikiran","Minta naik spek"],ans:1,why:"Karena kena virus. Dan dokternya bilang: jangan asal klik link sembarangan — nasihat yang berlaku juga buat manusia."},
+{cat:"logika",q:"Pintu apa yang nggak bisa dibuka, didorong sekuat apa pun?",sub:"Ada di setiap kantor. Dan di setiap hati. Eaaa.",opts:["Pintu darurat","Pintu yang lagi dikunci satpam","Pintu rezeki orang lain — bukan punya lo","Pintu yang tulisannya “TARIK” tapi lo dorong"],ans:2,why:"Pintu rezeki orang lain. Fokus ke pintu sendiri — yang “TARIK” itu juga jangan didorong terus, malu diliat CCTV."},
+{cat:"logika",q:"Kenapa anak kantor bawa tangga ke kantor?",sub:"Bukan buat benerin lampu.",opts:["Buat naik jabatan — karirnya mau naik level","AC-nya bocor","Disuruh OB","Buat foto OOTD"],ans:0,why:"Karena mau naik jabatan. Tangga karir itu nyata, cuma bentuknya spreadsheet, bukan kayu."},
+{cat:"logika",q:"Apa bedanya bos sama kalender?",sub:"Yang satu nggak pernah salah soal tanggal merah.",opts:["Nggak ada bedanya, dua-duanya bikin deg-degan","Kalender punya tanggal merah dan hari libur — bos maunya semua hari kerja","Bos bisa diajak nego, kalender nggak","Kalender lebih sering diliat"],ans:1,why:"Kalender tau kapan waktunya libur. Bos… kadang pura-pura lupa. Makanya tanggal merah selalu dicek dari Januari."},
+{cat:"logika",q:"Benda apa yang makin diisi makin ringan?",sub:"Ada di pesta ulang tahun anak kantor.",opts:["Galon air","Balon","Tas laptop","Celengan"],ans:1,why:"Balon — diisi udara malah terbang. Kebalikan dari workload: makin diisi makin berat, nggak pernah terbang."},
+{cat:"logika",q:"Kenapa kopi selalu kelihatan sedih di kantor?",sub:"Ini plesetan. Maaf. Tapi lo ketawa dikit kan.",opts:["Karena selalu di-tekan (espresso) dan di-seduh terus","Karena nggak pernah diajak meeting","Karena digantikan matcha","Karena gulanya dikurangin"],ans:0,why:"Karena tiap hari di-press dan diseduh. Kopi adalah karyawan paling setia: disuruh lembur tiap pagi, nggak pernah komplain."},
+{cat:"logika",q:"Surat apa yang nggak pernah sampai ke alamat tujuan?",sub:"Tiap kantor punya satu. Kadang lebih.",opts:["Surat resign yang cuma disimpan di draft","Surat cinta buat gebetan kantor","Surat tilang","Surat edaran yang nggak dibaca"],ans:0,why:"Surat resign versi draft. Ditulis pas lagi emosi jam 11 malam, dibaca lagi besok pagi, lalu disimpan… buat “suatu hari nanti”."},
+{cat:"logika",q:"Apa yang punya banyak kunci tapi nggak bisa buka satu pintu pun?",sub:"Bunyi-bunyian di ruang meeting.",opts:["Gantungan kunci satpam","Piano","Brankas","Keyboard rusak"],ans:1,why:"Piano — kuncinya banyak (tuts), pintunya nol. Sama kayak meeting: pesertanya banyak, keputusannya nol. Kadang-kadang."},
+{cat:"logika",q:"Kenapa deadline selalu datang lebih cepat dari tanggal gajian?",sub:"Pertanyaan filosofis anak kantor sejak zaman dahulu.",opts:["Karena kalendernya beda","Karena waktu terasa cepat pas dikejar, dan lambat pas nunggu transferan","Karena bos yang ngatur dua-duanya","Karena gajian selalu mundur"],ans:1,why:"Relativitas versi kantor: 3 hari menuju deadline terasa 3 jam; 3 hari menuju gajian terasa 3 minggu."},
+{cat:"logika",q:"Ruangan apa yang paling ditakuti anak kantor?",sub:"Masuknya gampang, keluarnya bawa tugas.",opts:["Ruang server","Ruang meeting yang kacanya transparan semua","Ruang bos — apalagi kalau dipanggil mendadak","Ruang arsip"],ans:2,why:"“Dipanggil ke ruangan bos” adalah notifikasi paling menakutkan, ngalahin notifikasi tagihan. Padahal kadang cuma ditanya kabar. Kadang."},
+{cat:"logika",q:"Apa yang jalan terus tapi nggak pernah sampai?",sub:"Lo liat benda ini tiap hari di dinding.",opts:["Proyek yang “on progress” terus","Jam dinding","Lift kantor","Antrean kantin"],ans:1,why:"Jam dinding. Muter terus, sampai-sampai nggak pernah. Yang “on progress” juga mirip sih, tapi itu bahasan lain."},
+/* ---------- STAGE 4: STAFF TETAP (tambahan) ---------- */
+{cat:"singkatan",stage:4,q:"SOP yang ditempel di dinding itu singkatan dari…",sub:"Dokumen yang dibaca pas ada audit doang.",opts:["Standard Operating Procedure — prosedur baku kerja","Sistem Orang Pintar","Surat Order Pembelian","Standar Output Paling rendah"],ans:0,why:"SOP = Standard Operating Procedure. Langkah baku biar kerjaan nggak tergantung mood dan ingatan masing-masing orang."},
+{cat:"singkatan",stage:4,q:"ROI dalam proposal bisnis itu singkatan dari…",sub:"Yang ditanya pertama sama finance.",opts:["Return on Investment — balik modalnya berapa","Rate of Interest","Report of Income","Rencana Operasional Internal"],ans:0,why:"ROI = Return on Investment. Bahasa simpelnya: duit yang ditanam, baliknya berapa dan kapan."},
+{cat:"situasi",stage:4,q:"Atasan kirim file 80 halaman jam 21.00 sambil bilang “tolong dibantu ya”. Artinya:",sub:"Jam kirimnya adalah petunjuk utamanya.",opts:["Boleh dikerjain minggu depan","Itu tugas beneran dan harapannya besok pagi udah ada progres","Cuma buat arsip, nggak usah dibuka","Dia salah kirim orang"],ans:1,why:"Pesan kerja jam 9 malam jarang yang sifatnya “santai aja”. “Dibantu ya” + file gede = kerjain, tapi tetap atur batas: konfirmasi deadline-nya biar jelas."},
+{cat:"situasi",stage:4,q:"Temen kantor bilang “gue resign bulan depan” tiap bulan sejak 2022. Artinya:",sub:"Kalender boleh ganti, kalimatnya nggak.",opts:["Dia beneran udah resign diam-diam","Itu ritual curhat — dia capek, tapi belum tentu pergi","Dia ngetes reaksi bos","Suratnya udah ditandatangani HR"],ans:1,why:"“Resign bulan depan” yang diulang bertahun-tahun biasanya ventilasi, bukan pengumuman. Yang beneran resign biasanya justru diam-diam."},
+{cat:"logika",stage:4,q:"Apa yang jadi milik lo, tapi orang lain jauh lebih sering memakainya?",sub:"Dipakai di absensi, email, dan panggilan meeting.",opts:["Laptop kantor","Nama lo","Kursi kerja","Password WiFi"],ans:1,why:"Nama lo. Lo jarang manggil diri sendiri, tapi satu kantor manggil lo terus — apalagi pas ada tugas tambahan."},
+/* ---------- STAGE 5: SENIOR STAFF ---------- */
+{cat:"singkatan",stage:5,q:"OKR yang sering dipasang bareng KPI itu singkatan dari…",sub:"Pasangan serasi di slide awal tahun.",opts:["Objectives and Key Results — tujuan dan hasil kuncinya","Office Key Rules","Operational Knowledge Record","Output Kerja Rutin"],ans:0,why:"OKR = Objectives and Key Results. Tujuannya mau ke mana, hasil kunci buat buktiin udah sampai sana apa belum."},
+{cat:"singkatan",stage:5,q:"CRM tempat data pelanggan disimpan itu singkatan dari…",sub:"Yang diisi sales dengan setengah hati.",opts:["Customer Relationship Management","Central Report Manager","Customer Revenue Machine","Catatan Rapat Mingguan"],ans:0,why:"CRM = Customer Relationship Management. Sistem buat ngelola hubungan dan riwayat pelanggan, bukan sekadar buku alamat mahal."},
+{cat:"singkatan",stage:5,q:"Perusahaan lo jualan ke perusahaan lain. Modelnya disebut…",sub:"Lawan katanya B2C.",opts:["B2B — Business to Business","B2C — Business to Customer doang","P2P — Peer to Peer","G2G — Government to Government"],ans:0,why:"B2B = Business to Business. Yang beli bukan orang buat diri sendiri, tapi perusahaan — makanya prosesnya panjang dan meeting-nya banyak."},
+{cat:"situasi",stage:5,q:"Meeting tanpa agenda dan tanpa moderator dimulai. Hasil paling mungkin:",sub:"45 menit kemudian…",opts:["Selesai 10 menit karena semua fokus","Muter di topik pertama, melebar ke mana-mana, ditutup dengan “nanti kita atur meeting lagi”","Semua keputusan langsung final","Nggak ada yang bicara sama sekali"],ans:1,why:"Meeting tanpa agenda itu kayak grup chat yang dijadikan tatap muka: rame, panjang, dan pulang tanpa keputusan."},
+{cat:"situasi",stage:5,q:"Grup kantor yang biasanya rame tiba-tiba sepi total setelah bos kirim pesan panjang. Artinya:",sub:"Keheningan itu juga sebuah jawaban.",opts:["Semua lagi sibuk kerja fokus","Semua lagi mikir keras siapa yang berani bales pertama — dan berharap bukan dirinya","Bos-nya salah grup","Semua udah pulang"],ans:1,why:"Sepi setelah pesan panjang bos = mode baca, cerna, dan tunggu orang lain bales dulu. Yang bales pertama dapet gelar pemberani hari itu."},
+{cat:"situasi",stage:5,q:"Kandidat diinfo HR: “Nanti kita kabarin ya.” Terjemahan paling jujurnya:",sub:"Kalimat penutup sejuta interview.",opts:["Pasti diterima, tinggal tunggu","Belum ada keputusan — bisa iya, bisa nggak, jangan berhenti cari yang lain dulu","Pasti ditolak hari itu juga","HR lupa nomornya"],ans:1,why:"“Nanti dikabarin” artinya prosesnya belum selesai. Buat kandidat, sikap paling aman: ucapkan terima kasih dan tetap jalan dengan peluang lain."},
+{cat:"logika",stage:5,q:"Apa yang bisa naik dan turun, tapi bendanya nggak bergerak sama sekali?",sub:"Ada di termometer dan di grafik penjualan.",opts:["Lift kantor","Suhu / angka di grafik","Tangga","Harga saham doang"],ans:1,why:"Suhu dan angka. Bendanya diam, nilainya yang jalan-jalan — kayak status project: tulisannya diam di “on progress”, angkanya entah ke mana."},
+{cat:"logika",stage:5,q:"Kenapa gunting selalu menang lawan kertas, tapi kalah sama batu?",sub:"Ini bukan soal kantor. Atau sebenarnya soal kantor juga.",opts:["Karena aturan main suit: gunting potong kertas, batu hancurkan gunting","Karena guntingnya tumpul","Karena kertasnya impor","Karena batunya lebih senior"],ans:0,why:"Aturan suit klasik. Di kantor juga gitu: semua orang ada yang ngalahin, dan ada yang dikalahin — tergantung match-up-nya."},
+{cat:"logika",stage:5,q:"Benda apa yang makin lo potong, makin panjang?",sub:"Bukan mi instan. Pikirkan tanah.",opts:["Tali tambang","Parit / lubang galian","Roti tawar","Kabel LAN"],ans:1,why:"Parit — makin digali (dipotong tanahnya), makin panjang dan dalam. Kebalikan dari budget: makin dipotong makin pendek napas project-nya."},
+/* ---------- STAGE 6: TEAM LEAD ---------- */
+{cat:"singkatan",stage:6,q:"CEO itu singkatan dari…",sub:"Jabatan yang fotonya ada di slide company profile.",opts:["Chief Executive Officer — direktur utama","Central Executive Office","Chief Everything Officer","Customer Experience Officer"],ans:0,why:"CEO = Chief Executive Officer. Pucuk pimpinan eksekutif — yang tanda tangannya paling ditunggu dan paling bikin deg-degan."},
+{cat:"singkatan",stage:6,q:"Di email ada tulisan “TBC” pas bahas tanggal acara. Maksudnya…",sub:"Bukan penyakit, tenang.",opts:["To Be Confirmed — masih menunggu konfirmasi","To Be Cancelled — bakal dibatalkan","Total Budget Cost","To Be Continued"],ans:0,why:"TBC = To Be Confirmed. Artinya belum fix — jangan dulu sebar undangan, jangan dulu booking katering."},
+{cat:"singkatan",stage:6,q:"ETA di grup logistik artinya…",sub:"Singkatan favorit kurir dan tim event.",opts:["Estimated Time of Arrival — perkiraan waktu sampai","Extra Time Added","End of Transaction Agreement","Estimated Total Amount"],ans:0,why:"ETA = Estimated Time of Arrival. Perkiraan sampai — kata kuncinya “perkiraan”, makanya bisa geser tanpa pemberitahuan dramatis."},
+{cat:"singkatan",stage:6,q:"Dokumen TOR sebelum project dimulai itu singkatan dari…",sub:"Yang jadi pegangan scope kerja.",opts:["Terms of Reference — kerangka acuan kerja","Total Operational Revenue","Technical Office Report","Timeline of Release"],ans:0,why:"TOR = Terms of Reference. Isinya tujuan, scope, dan batasan kerja — dokumen yang dikutip pas scope mulai melebar ke mana-mana."},
+{cat:"situasi",stage:6,q:"Lo bilang “gampang ini, 5 menit beres” soal tugas coding / desain. Yang terjadi:",sub:"Kutukan klasik pekerja kreatif dan IT.",opts:["Beneran beres 5 menit","3 jam kemudian masih di situ, plus nemu 2 masalah baru","Tugasnya hilang sendiri","Bos bilang nggak jadi"],ans:1,why:"“5 menit beres” adalah undangan resmi buat semesta nambahin error yang belum pernah ada yang liat sebelumnya."},
+{cat:"situasi",stage:6,q:"Ada yang nanya di grup: “Ini siapa yang pegang ya?” dan nggak ada yang jawab. Artinya:",sub:"Pertanyaan paling sepi di dunia kerja.",opts:["Semua tau jawabannya tapi malu","Nggak ada yang pegang — atau yang pegang lagi pura-pura nggak liat","Udah beres diam-diam","Grupnya salah"],ans:1,why:"Sunyi setelah “siapa yang pegang?” = bola panas. Yang jawab pertama biasanya otomatis jadi pemilik barunya. Hati-hati."},
+{cat:"situasi",stage:6,q:"Bos bilang “kita lean team ya” pas lo minta tambahan orang. Artinya:",sub:"Lean di sini bukan soal diet.",opts:["Timnya bakal ditambah pelan-pelan","Tim tetap kecil — orang yang sama bakal pegang lebih banyak hal","Semua harus diet","Kantor mau pindah ke gedung ramping"],ans:1,why:"“Lean team” = tim ramping. Terjemahan lapangannya: rekrutmen belum sekarang, workload-nya yang sekarang ditata ulang (ke orang yang sama)."},
+{cat:"logika",stage:6,q:"Apa yang selalu ada di akhir tahun, selain evaluasi dan resolusi?",sub:"Jawabannya ada di pertanyaan ini. Harfiah.",opts:["Huruf N — kata “tahun” diakhiri huruf N","Bonus yang belum tentu ada","Kalender baru","Rapat tahunan"],ans:0,why:"Huruf N. “Tahun” selalu berakhir dengan N, mau kinerjanya bagus atau nggak. Kalau bonus, itu beda urusan."},
+{cat:"logika",stage:6,q:"Kenapa orang bawa payung pas musim hujan tapi tetap basah?",sub:"Plesetan tingkat lanjut. Fokus ke kata “bawa”.",opts:["Payungnya bocor","Karena cuma dibawa, nggak dibuka","Hujannya dari samping","Dia lupa turun dari mobil"],ans:1,why:"Dibawa doang nggak cukup — payung harus dibuka. Sama kayak SOP: punya doang nggak cukup, harus dipakai."},
+{cat:"logika",stage:6,q:"Ruangan apa yang nggak punya pintu, nggak punya jendela, tapi semua orang pernah masuk?",sub:"Hint: bukan ruangan fisik. Ada di grup chat juga.",opts:["Ruang tunggu","Ruang obrolan / chat room","Ruang server","Ruang meeting virtual doang"],ans:1,why:"Ruang obrolan. Nggak ada pintunya, tapi sekali masuk grup kantor, keluar darinya butuh keberanian sosial yang besar."},
+/* ---------- STAGE 7: SUPERVISOR ---------- */
+{cat:"singkatan",stage:7,q:"HRD itu kepanjangan dari…",sub:"Divisi yang dipanggil pas ada yang resign dan pas ada yang dicari.",opts:["Human Resources Department — divisi SDM","Human Relations Division doang","Harian Rapat Direksi","Hubungan Rakyat dan Daerah"],ans:0,why:"HRD = Human Resources Department. Ngurusin manusia di kantor: rekrut, kontrak, sampai exit interview yang awkward itu."},
+{cat:"singkatan",stage:7,q:"PPh yang dipotong dari gaji itu singkatan dari…",sub:"Potongan yang bikin slip gaji panjang.",opts:["Pajak Penghasilan","Potongan Perusahaan","Program Penghasilan Pegawai","Pajak Pertambahan Harga"],ans:0,why:"PPh = Pajak Penghasilan. Beda sama PPN (Pajak Pertambahan Nilai) yang nempel di struk belanja. Dua-duanya sama-sama nggak bisa ditawar."},
+{cat:"singkatan",stage:7,q:"Dalam meeting online, “BRB” artinya…",sub:"Biasanya tanpa pamit beneran.",opts:["Be Right Back — sebentar, balik lagi","Bring Refreshments Back","Business Review Board","Be Ready, Boss"],ans:0,why:"BRB = Be Right Back. Orang-nya hilang 30 detik sampai 30 menit — rentangnya nggak bisa diprediksi, kayak durasi “meeting sebentar”."},
+{cat:"singkatan",stage:7,q:"RFQ yang dikirim ke vendor itu singkatan dari…",sub:"Dokumen sebelum vendor kasih harga.",opts:["Request for Quotation — permintaan penawaran harga","Report for Quality","Request for Quantity","Ready for Queue"],ans:0,why:"RFQ = Request for Quotation. Lo minta vendor kasih penawaran harga resmi — habis itu masuk fase perbandingan dan nego yang panjang."},
+{cat:"situasi",stage:7,q:"Email lo dibalas cuma dengan satu kata: “Ok.” tanpa titik dua, tanpa emoji. Artinya paling aman:",sub:"Jangan overthinking. Atau justru…",opts:["Dia marah besar","Dia setuju / menerima — singkat karena sibuk, bukan karena kesal (biasanya)","Dia belum baca","Itu auto-reply"],ans:1,why:"“Ok.” satu kata mayoritas artinya memang ok. Nada di teks itu gampang salah baca — kalau penting, konfirmasi langsung, jangan diterka semalaman."},
+{cat:"situasi",stage:7,q:"H-1 acara besar, vendor bilang “aman, Pak/Bu”. Tingkat kepercayaan yang sehat:",sub:"Pengalaman adalah guru terbaik. Dan paling mahal.",opts:["100%, langsung tidur nyenyak","Tetap cek sendiri semua checklist — “aman” dari vendor bukan garansi","0%, pasti berantakan","Tergantung font yang dipakai vendor"],ans:1,why:"“Aman” itu status, bukan bukti. Anak event dan project yang selamat adalah yang tetap ngecek sendiri di H-1, bukan yang paling percaya."},
+{cat:"situasi",stage:7,q:"Lo dipuji bos di depan tim: “Untung ada lo.” Efek samping yang paling sering nyusul:",sub:"Pujian di kantor jarang datang sendirian.",opts:["Naik gaji otomatis","Tugas serupa bakal selalu dilempar ke lo lagi — karena lo terbukti bisa","Lo boleh pulang lebih awal selamanya","Tim bubar"],ans:1,why:"Kompeten itu pedang bermata dua: kerjaan beres, dan kerjaan berikutnya langsung nyari orang yang sama. Atur kapasitas lo baik-baik."},
+{cat:"logika",stage:7,q:"Kenapa jam dinding di kantor terasa lebih lambat pas hari Jumat sore?",sub:"Fisika nggak berubah. Persepsinya yang berubah.",opts:["Baterainya lemah","Karena lo liatin terus — waktu yang ditunggu memang terasa lebih lama","Jamnya disetel bos","Hari Jumat gravitasinya beda"],ans:1,why:"Waktu yang ditunggu-tunggu terasa memanjang. Solusinya bukan ganti jam, tapi berhenti ngeliatin jam tiap 4 menit."},
+{cat:"logika",stage:7,q:"Apa yang punya leher tapi nggak punya kepala?",sub:"Ada di meja pantry dan meja kerja.",opts:["Botol","Kemeja","Gitar doang","Boneka"],ans:0,why:"Botol — dan juga kemeja sebenernya, tapi jawaban klasiknya botol. Yang nggak punya leher tapi banyak kepala: tim tanpa lead. Kacau."},
+{cat:"logika",stage:7,q:"Semakin banyak lo ambil dari benda ini, semakin besar bendanya. Benda apa?",sub:"Ada di proyek galian dan di masalah kantor.",opts:["Lubang","Tumpukan berkas","Antrean","Utang"],ans:0,why:"Lubang. Makin diambil tanahnya, makin besar. Prinsip yang sama berlaku buat masalah yang “digali” terus di meeting tanpa ditutup."},
+/* ---------- STAGE 8: MANAGER ---------- */
+{cat:"singkatan",stage:8,q:"BEP yang dikejar bisnis baru itu singkatan dari…",sub:"Titik di mana bisnis berhenti rugi.",opts:["Break Even Point — titik impas","Business Expansion Plan","Budget Estimation Process","Best Employee Prize"],ans:0,why:"BEP = Break Even Point. Titik impas: pemasukan persis nutup modal dan biaya. Lewat titik ini baru namanya untung."},
+{cat:"singkatan",stage:8,q:"Di laporan keuangan, EBITDA sering muncul. Itu singkatan dari…",sub:"Singkatan terpanjang di daftar ini.",opts:["Earnings Before Interest, Taxes, Depreciation and Amortization","Estimated Business Income Total Data","Employee Benefit and Tax Data","External Budget Internal Tax Audit"],ans:0,why:"EBITDA = laba sebelum bunga, pajak, depresiasi, dan amortisasi. Cara cepat liat kinerja operasional tanpa embel-embel pembukuan."},
+{cat:"singkatan",stage:8,q:"Singkatan “YoY” di grafik laporan artinya…",sub:"Perbandingan favorit di slide kuartalan.",opts:["Year over Year — dibanding periode sama tahun lalu","Yield on Yield","Year of Yield","Your own Year"],ans:0,why:"YoY = Year over Year. Bandingin angka sekarang sama periode yang sama tahun lalu, biar nggak ketipu efek musiman."},
+{cat:"situasi",stage:8,q:"Slide presentasi lo 42 halaman, bos bilang “dibikin simpel aja ya”. Artinya:",sub:"Simpel versi bos dan versi lo bisa beda jauh.",opts:["Tambah animasi biar menarik","Potong jadi inti-intinya — kemungkinan besar di bawah 10 slide yang padat","Ganti font aja cukup","Baca semua slide lebih cepat"],ans:1,why:"“Simpel aja” = buang yang nggak perlu, sisakan keputusan yang mau diambil. 42 slide itu bukan presentasi, itu dokumen yang dipaksakan tampil."},
+{cat:"situasi",stage:8,q:"Klien bilang “budget bukan masalah”. Kalimat yang hampir selalu menyusul:",sub:"Dengerin sampai kalimatnya selesai.",opts:["“Transfer hari ini juga.”","“Tapi timeline-nya bisa lebih cepat nggak?” / “tapi bisa kurang lagi nggak harganya?”","“Ambil paket paling mahal.”","Nggak ada kelanjutannya, titik."],ans:1,why:"“Budget bukan masalah” hampir selalu punya kata “tapi”. Yang jadi masalah biasanya pindah ke timeline atau ke harga — dengerin kalimat lengkapnya."},
+{cat:"situasi",stage:8,q:"Dua divisi saling lempar: “Itu jobdesc mereka.” Hasil akhirnya biasanya:",sub:"Pola klasik organisasi di mana-mana.",opts:["Salah satu langsung mengaku dan beres","Kerjaannya nggak jalan sampai ada yang ditunjuk jelas (PIC) di depan semua orang","Beres sendiri karena waktu","Bos yang ngerjain"],ans:1,why:"Kerjaan tanpa pemilik yang jelas bakal jadi bola pingpong antar divisi. Obatnya satu: tunjuk PIC-nya, tulis, umumkan. Selesai."},
+{cat:"situasi",stage:8,q:"Lo baru tau info penting perusahaan dari gosip pantry, bukan dari pengumuman resmi. Artinya:",sub:"Pantry adalah media tercepat di kantor mana pun.",opts:["Gosipnya pasti bohong","Jalur komunikasi informal lagi lebih cepat dari jalur resmi — dan gosipnya sering ada benarnya, tapi tetap verifikasi","Pengumumannya hilang","Pantry-nya mau ditutup"],ans:1,why:"Berita kantor memang sering bocor di pantry duluan. Sikap yang bener: dengerin boleh, nyebarin jangan, verifikasi wajib."},
+{cat:"logika",stage:8,q:"Apa yang selalu datang, tapi nggak pernah benar-benar tiba hari ini?",sub:"Jawabannya dipakai buat menunda diet juga.",opts:["Besok","Gajian","Deadline","Paket belanjaan"],ans:0,why:"Besok. Tiap hari berganti, “besok” tetap besok. Makanya “mulai besok” adalah tanggal paling nggak bisa dipegang di kalender."},
+{cat:"logika",stage:8,q:"Kenapa angka 0 selalu sendirian di tengah malam?",sub:"Plesetan angka. Siapkan diri buat groan.",opts:["Karena dia nol — nggak ada temennya, “kosong”","Karena angka lain pulang","Karena 0 dilarang lembur","Karena kalkulatornya mati"],ans:0,why:"Karena nol itu kosong. Iya, receh. Tapi lo baca sampai sini, jadi plesetannya berhasil menjalankan tugasnya."},
+{cat:"logika",stage:8,q:"Benda apa yang bisa lo pegang, tapi nggak bisa lo sentuh sama sekali?",sub:"Dijanjikan pas interview, dicari pas resign.",opts:["Janji","Bayangan","Udara panas AC","Sinyal WiFi"],ans:0,why:"Janji — bisa dipegang omongannya, nggak bisa disentuh bendanya. Makanya ada istilah “pegang janji”, bukan “sentuh janji”."},
+/* ---------- STAGE 9: SENIOR MANAGER ---------- */
+{cat:"singkatan",stage:9,q:"Dalam kontrak, “Force Majeure” sering disingkat dan artinya…",sub:"Klausul yang dibaca pas ada bencana doang.",opts:["Keadaan kahar — kejadian di luar kendali yang membebaskan kewajiban","Kekuatan mayoritas pemegang saham","Biaya tambahan wajib","Force Manager — perintah atasan"],ans:0,why:"Force majeure = keadaan kahar: bencana, perang, pandemi, dan kejadian luar kendali lain yang bikin kewajiban kontrak nggak bisa dipenuhi."},
+{cat:"singkatan",stage:9,q:"LOI sebelum kontrak besar itu singkatan dari…",sub:"Surat niat sebelum surat beneran.",opts:["Letter of Intent — surat pernyataan niat","List of Items","Letter of Invoice","Level of Interest"],ans:0,why:"LOI = Letter of Intent. Pernyataan niat serius buat lanjut ke kesepakatan resmi — belum kontrak, tapi bukan basa-basi juga."},
+{cat:"singkatan",stage:9,q:"“Capex” vs “Opex” di budgeting. Capex itu…",sub:"Dua kantong anggaran yang sering ketukar.",opts:["Capital Expenditure — belanja modal / aset jangka panjang","Cash Expenditure","Capital Expense harian","Campaign Expenditure"],ans:0,why:"Capex = belanja modal buat aset jangka panjang (server, gedung, mesin). Opex = biaya operasional rutin (listrik, langganan, gaji)."},
+{cat:"situasi",stage:9,q:"Meeting direksi dijadwalkan ulang 3 kali dalam seminggu. Sinyal paling masuk akal:",sub:"Jadwal direksi adalah seismograf perusahaan.",opts:["Ada topik besar yang belum matang / belum sepakat — keputusan penting sedang digodok","Kalendernya rusak","Semua lagi liburan","Meeting-nya nggak penting sama sekali"],ans:0,why:"Penjadwalan ulang beruntun di level atas biasanya tanda ada keputusan besar yang belum ketemu titik sepakatnya. Siapkan materi lo biar pas dipanggil, siap."},
+{cat:"situasi",stage:9,q:"Perusahaan ngumumin “efisiensi” di semua channel. Terjemahan yang perlu diantisipasi tim:",sub:"Satu kata, banyak tafsir, satu arah.",opts:["Libur tambahan buat semua","Anggaran diperketat — dan bisa sampai ke struktur tim, jadi siapkan prioritas kerjaan yang paling berdampak","Ganti logo perusahaan","Pindah kantor ke tempat lebih kecil doang"],ans:1,why:"“Efisiensi” hampir selalu berarti pengetatan: budget dipangkas, proses dirampingkan. Yang aman adalah tim yang bisa buktiin dampak kerjanya dengan angka."},
+{cat:"situasi",stage:9,q:"Bos besar bilang “nanti kita pikirkan” soal proposal lo, tanpa tanggal. Langkah paling efektif:",sub:"“Dipikirkan” tanpa jadwal = mengambang.",opts:["Tunggu aja sampai dihubungi","Minta / usulkan jadwal follow-up yang konkret sebelum percakapan selesai","Kirim proposal yang sama tiap hari","Anggap ditolak dan berhenti"],ans:1,why:"Proposal tanpa jadwal follow-up bakal tenggelam di tumpukan prioritas lain. Kunci satu tanggal spesifik — itu yang bikin “dipikirkan” jadi “diputuskan”."},
+{cat:"logika",stage:9,q:"Apa yang makin tajam kalau sering dipakai, tapi bukan pisau?",sub:"Ada di kepala. Dipakai di setiap meeting.",opts:["Otak / pikiran","Pensil","Argumen bos","Jadwal"],ans:0,why:"Pikiran. Makin sering dipakai mikir, makin tajam. Kebalikan total dari pisau pantry yang makin dipakai makin tumpul dan hilang."},
+{cat:"logika",stage:9,q:"Kenapa buku selalu jadi karyawan teladan?",sub:"Karena dia… tahan, ini plesetan sampul.",opts:["Karena selalu punya “daftar isi” yang jelas dan nggak pernah kehilangan “halaman” fokusnya","Karena dibaca bos","Karena sampulnya keras","Karena nggak pernah cuti"],ans:0,why:"Buku itu terstruktur: ada daftar isi, bab, dan halaman yang jelas. Coba kalau laporan project ditata serapi itu — setengah masalah kantor hilang."},
+{cat:"logika",stage:9,q:"Apa yang dimiliki kota, dimiliki kantor, tapi nggak pernah bisa dimiliki satu orang?",sub:"Besar, ramai, dan penuh aturan tak tertulis.",opts:["Jalan / jalur — semua lewat, nggak ada yang punya sendiri-sendiri","Gedung","Parkiran","Kantin"],ans:0,why:"Jalan. Dipakai semua orang, dimiliki bersama. Versi kantornya: printer bersama — dipakai semua, pas rusak nggak ada yang merasa punya."},
+{cat:"logika",stage:9,q:"Satu kata yang kalau lo ucapkan, justru langsung hilang. Kata apa?",sub:"Paradoks favorit tebak-tebakan.",opts:["“Diam” / “hening” — sekali diucapkan, keheningannya pecah","“Rahasia”","“Selesai”","“Lembur”"],ans:0,why:"“Diam”. Begitu lo ngomong, diam-nya berakhir. Sama kayak “meeting ini rahasia ya” — begitu diumumkan ke 14 orang, statusnya berubah."},
+/* ---------- STAGE 10: DIREKTUR & CEO ---------- */
+{cat:"singkatan",stage:10,q:"RUPS yang dihadiri pemegang saham itu singkatan dari…",sub:"Rapat paling tinggi di struktur perusahaan.",opts:["Rapat Umum Pemegang Saham","Rapat Umum Para Staff","Rencana Umum Pengembangan Sistem","Rapat Urusan Pemasaran dan Sales"],ans:0,why:"RUPS = Rapat Umum Pemegang Saham. Forum tertinggi buat keputusan besar: laporan tahunan, direksi, sampai pembagian dividen."},
+{cat:"singkatan",stage:10,q:"IPO yang bikin perusahaan masuk bursa itu singkatan dari…",sub:"Momen perusahaan “go public”.",opts:["Initial Public Offering — penawaran saham perdana ke publik","Internal Public Office","International Purchase Order","Initial Profit Outcome"],ans:0,why:"IPO = Initial Public Offering. Pertama kalinya saham perusahaan ditawarkan ke publik — dari perusahaan tertutup jadi perusahaan terbuka."},
+{cat:"singkatan",stage:10,q:"Due diligence sebelum akuisisi artinya proses…",sub:"Fase “cek dulu sebelum beli perusahaan”.",opts:["Uji tuntas — pemeriksaan menyeluruh atas keuangan, hukum, dan operasional target","Bayar tepat waktu","Rapat tahunan direksi","Audit internal rutin doang"],ans:0,why:"Due diligence = uji tuntas. Sebelum beli / investasi besar, semua dicek: angka, kontrak, risiko. Versi personalnya: cek dulu sebelum tanda tangan apa pun."},
+{cat:"situasi",stage:10,q:"Di ruang direksi, semua orang mengangguk pas proposal dipresentasikan, tapi nggak ada yang ngomong. Artinya:",sub:"Anggukan di level ini bukan persetujuan otomatis.",opts:["Proposal pasti disetujui 100%","Belum tentu setuju — bisa jadi lagi nunggu siapa yang bicara pertama, atau keberatannya disimpan buat forum lain","Semua ngantuk","Proposal-nya terlalu bagus buat dikomentari"],ans:1,why:"Diam dan anggukan di level direksi seringnya strategi, bukan persetujuan. Keputusan beneran ketauan dari tindak lanjutnya: ada PIC dan tanggal, atau nggak ada sama sekali."},
+{cat:"situasi",stage:10,q:"Perusahaan bilang “kita pivot”. Artinya arah bisnisnya…",sub:"Kata favorit startup pas rencana A selesai.",opts:["Tutup total","Berubah arah secara signifikan — produk / pasar / model bisnis diganti, bukan sekadar disesuaikan dikit","Pindah kantor","Ganti nama brand doang"],ans:1,why:"Pivot = ganti arah secara mendasar sambil tetap jalan. Bukan revisi kecil — ini belok besar karena arah lama nggak ngasih hasil yang dicari."},
+{cat:"situasi",stage:10,q:"Investor nanya “runway-nya berapa lama?” Maksudnya:",sub:"Bukan runway bandara. Ini soal napas perusahaan.",opts:["Berapa lama kas perusahaan cukup buat operasional sebelum habis","Panjang landasan kantor pusat","Durasi presentasi yang diminta","Jangka waktu kontrak sewa"],ans:0,why:"Runway = berapa bulan kas bisa membiayai operasional dengan laju bakar saat ini. Angka ini yang menentukan seberapa tenang (atau panik) satu perusahaan."},
+{cat:"logika",stage:10,q:"Apa yang bisa mengisi satu ruangan penuh, tapi nggak makan tempat sama sekali?",sub:"Ada di setiap ruang meeting yang lampunya nyala.",opts:["Cahaya","Kursi lipat","Orang yang telat","Suara presentasi"],ans:0,why:"Cahaya. Satu ruangan bisa penuh cahaya tanpa satu senti pun tempat terpakai. Yang makan tempat tanpa terasa berguna: tumpukan kursi rusak di gudang."},
+{cat:"logika",stage:10,q:"Kenapa pemimpin yang baik kayak gema?",sub:"Kedengarannya puitis, tapi masuk akal.",opts:["Karena suaranya selalu yang terakhir didengar — dia bicara setelah mendengar semua orang","Karena ngomongnya keras","Karena selalu mengulang perintah","Karena tinggal di gunung"],ans:0,why:"Gema datang belakangan. Pemimpin yang dengerin dulu sebelum mutusin biasanya dapet keputusan yang lebih bener — dan tim yang lebih nurut tanpa dipaksa."},
+{cat:"logika",stage:10,q:"Apa yang naik ke atas pas hujan turun?",sub:"Di luar jendela kantor, tiap musim hujan.",opts:["Payung yang dibuka","Harga ojek online","Genangan","Semangat kerja"],ans:0,why:"Payung. Hujan turun, payung naik. Harga ojek online juga naik sih — tapi itu jawaban kedua yang sayangnya juga benar secara ekonomi."},
+{cat:"logika",stage:10,q:"Pertanyaan terakhir: apa yang jadi lebih besar, semakin lo nggak memikirkannya — dan selalu menunggu di akhir setiap project?",sub:"Bos terakhir dari semua bos terakhir.",opts:["Retrospektif / pelajaran yang baru kerasa nilainya belakangan — plus deadline berikutnya yang udah antre","Tumpukan email","Utang kopi ke pantry","Daftar resolusi tahun depan"],ans:0,why:"Setiap project ninggalin pelajaran yang nilainya baru kerasa di project berikutnya — dan satu deadline baru yang udah antre. Selamat, lo tamat. Karir (di game ini) selesai."}
+
+];
+
+/* Stage assignment for the original 36 questions (order matches BANK above) */
+var OLD_STAGES = [1,1,1,2,2,3,3,1,1,4,2,2, 1,3,2,3,2,3,4,4,3,4,2,5, 1,1,2,1,2,1,3,3,2,3,4,3];
+for(var _si=0; _si<OLD_STAGES.length && _si<BANK.length; _si++){ if(!BANK[_si].stage) BANK[_si].stage = OLD_STAGES[_si]; }
+
+var STAGES = [
+  {n:1, name:"Hari Pertama Magang", desc:"Soal paling dasar. Singkatan umum, situasi hari pertama, logika pemanasan.", diff:"Pemanasan"},
+  {n:2, name:"Masa Probation", desc:"Mulai baca situasi: noted, printer Jumat, dan kode-kode halus anak kantor.", diff:"Mudah"},
+  {n:3, name:"Staff Junior", desc:"Bahasa korporat naik level: MoM, NDA, CC atasan, dan revisi terakhir.", diff:"Mudah+"},
+  {n:4, name:"Staff Tetap", desc:"Udah dipercaya pegang kerjaan beneran. SOP, ROI, dan tugas jam 9 malam.", diff:"Menengah"},
+  {n:5, name:"Senior Staff", desc:"OKR, CRM, B2B — dan meeting tanpa agenda yang legendaris itu.", diff:"Menengah"},
+  {n:6, name:"Team Lead", desc:"Mulai pegang orang. TOR, ETA, dan bola panas bernama “siapa yang pegang?”.", diff:"Menengah+"},
+  {n:7, name:"Supervisor", desc:"HRD, pajak, vendor, dan seni membaca email satu kata.", diff:"Sulit"},
+  {n:8, name:"Manager", desc:"Angka bicara: BEP, EBITDA, YoY. Plus gosip pantry sebagai sumber data.", diff:"Sulit"},
+  {n:9, name:"Senior Manager", desc:"Kontrak dan strategi: force majeure, LOI, capex, dan kata sakti “efisiensi”.", diff:"Sulit+"},
+  {n:10, name:"Direktur & CEO", desc:"Stage terakhir. RUPS, IPO, pivot, runway — lulus di sini, lo tamat.", diff:"Bos terakhir"}
+];
+var PASS_MARK = 6;
+
+var CATMETA = {
+  campuran:{label:"Campuran Acak", color:"#ff5a4e"},
+  singkatan:{label:"Tebak Singkatan", color:"#2456d6"},
+  situasi:{label:"Tebak Situasi", color:"#0e9a8b"},
+  logika:{label:"Logika Receh", color:"#8a5cf6"}
+};
+var LETTERS = ["A","B","C","D"];
+var TIME_PER_Q = 20;
+
+var state = { mode:"campuran", deck:[], idx:0, score:0, streak:0, bestStreak:0, correct:0, answered:false, timerId:null, timeLeft:TIME_PER_Q, history:[], sessionBest:0, sessionBestGelar:"", stageMode:false, currentStage:0, unlockedStage:1, completedStages:{} };
+
+/* ---- Cache progres (localStorage browser ini) ---- */
+var STORAGE_KEY = "tebak-tebakan-kantor-progress-v1";
+function loadProgress(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    var data = JSON.parse(raw);
+    if(!data || typeof data !== "object") return;
+    if(typeof data.unlockedStage === "number" && isFinite(data.unlockedStage)){
+      state.unlockedStage = Math.min(10, Math.max(1, Math.floor(data.unlockedStage)));
+    }
+    if(data.completedStages && typeof data.completedStages === "object"){
+      var cleaned = {};
+      Object.keys(data.completedStages).forEach(function(k){
+        var n = parseInt(k, 10);
+        if(n >= 1 && n <= 10 && data.completedStages[k]) cleaned[n] = true;
+      });
+      state.completedStages = cleaned;
+      /* jaga konsistensi: unlocked minimal setelah stage lulus tertinggi */
+      var maxDone = 0;
+      Object.keys(cleaned).forEach(function(k){ maxDone = Math.max(maxDone, parseInt(k,10)); });
+      if(maxDone >= 1 && state.unlockedStage < Math.min(10, maxDone + 1)) state.unlockedStage = Math.min(10, maxDone + 1);
+    }
+    if(typeof data.sessionBest === "number" && isFinite(data.sessionBest) && data.sessionBest > 0) state.sessionBest = Math.floor(data.sessionBest);
+    if(typeof data.sessionBestGelar === "string") state.sessionBestGelar = data.sessionBestGelar;
+  }catch(e){}
+}
+function saveProgress(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      unlockedStage: state.unlockedStage,
+      completedStages: state.completedStages,
+      sessionBest: state.sessionBest,
+      sessionBestGelar: state.sessionBestGelar,
+      savedAt: Date.now()
+    }));
+  }catch(e){}
+}
+function clearProgress(){
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  state.unlockedStage = 1;
+  state.completedStages = {};
+  state.sessionBest = 0;
+  state.sessionBestGelar = "";
+  var bb = document.getElementById("bestbar");
+  if(bb) bb.style.display = "none";
+  renderStageMap();
+  toast("Progres direset — mulai lagi dari Stage 1.");
+}
+loadProgress();
+
+function $(id){ return document.getElementById(id); }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function show(view){
+  ["view-home","view-game","view-result"].forEach(function(v){ $(v).classList.toggle("hidden", v!==view); });
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(function(){ t.classList.remove("show"); }, 2400); }
+
+/* tiny beeps */
+var audioCtx=null;
+function beep(freq, dur, type){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==="suspended") audioCtx.resume();
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||"sine"; o.frequency.value=freq; g.gain.value=0.06;
+    o.connect(g); g.connect(audioCtx.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+dur);
+    o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+
+function buildDeck(pool){
+  return shuffle(pool).slice(0,10).map(function(q){
+    var order = shuffle(q.opts.map(function(_,i){ return i; }));
+    return { cat:q.cat, q:q.q, sub:q.sub, why:q.why, stage:q.stage,
+      opts: order.map(function(i){ return q.opts[i]; }),
+      ans: order.indexOf(q.ans) };
+  });
+}
+function resetRun(){
+  state.idx=0; state.score=0; state.streak=0; state.bestStreak=0; state.correct=0; state.history=[];
+}
+function startGame(mode){
+  state.mode = mode; state.stageMode = false; state.currentStage = 0;
+  var pool = (mode==="campuran") ? BANK.slice() : BANK.filter(function(q){ return q.cat===mode; });
+  state.deck = buildDeck(pool);
+  resetRun();
+  show("view-game");
+  renderQ();
+}
+function startStage(n){
+  var st = STAGES[n-1]; if(!st) return;
+  if(n > state.unlockedStage){ toast("Stage ini masih kekunci — lulus stage sebelumnya dulu."); return; }
+  state.mode = "stage"; state.stageMode = true; state.currentStage = n;
+  var pool = BANK.filter(function(q){ return q.stage===n; });
+  state.deck = buildDeck(pool);
+  resetRun();
+  show("view-game");
+  renderQ();
+}
+function renderStageMap(){
+  var wrap = $("stage-map"); if(!wrap) return;
+  wrap.innerHTML = "";
+  STAGES.forEach(function(st){
+    var locked = st.n > state.unlockedStage;
+    var done = !!state.completedStages[st.n];
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "stage s"+st.n; b.disabled = locked;
+    b.innerHTML = '<span class="num">'+(locked ? "🔒" : st.n)+'</span><span><h3>Stage '+st.n+": "+escapeHtml(st.name)+'</h3><p>'+escapeHtml(st.desc)+'</p><span class="meta"><span class="pill">10 soal</span><span class="pill">'+escapeHtml(st.diff)+'</span>'+(done ? '<span class="pill done">✓ Lulus</span>' : locked ? '<span class="pill lock">Terkunci</span>' : '<span class="pill">Siap main</span>')+'</span></span>';
+    if(!locked) b.addEventListener("click", function(){ startStage(st.n); });
+    wrap.appendChild(b);
+  });
+}
+
+function renderQ(){
+  var item = state.deck[state.idx];
+  state.answered = false;
+  $("hud-score").textContent = state.score;
+  $("hud-streak").textContent = state.streak + "x";
+  $("hud-q").textContent = (state.idx+1) + "/" + state.deck.length;
+  if(state.stageMode){
+    var _st = STAGES[state.currentStage-1];
+    $("hud-stage-k").textContent = "Stage " + state.currentStage + " / 10";
+    $("hud-stage").textContent = _st ? _st.name : ("Stage " + state.currentStage);
+  } else {
+    $("hud-stage-k").textContent = "Mode";
+    $("hud-stage").textContent = (CATMETA[state.mode] ? CATMETA[state.mode].label : "Bebas");
+  }
+  $("prog").style.width = (state.idx/state.deck.length*100) + "%";
+  var meta = CATMETA[item.cat];
+  var catEl = $("q-cat"); catEl.textContent = meta.label; catEl.style.background = meta.color;
+  $("q-num").textContent = "Soal " + (state.idx+1) + " dari " + state.deck.length;
+  $("q-text").textContent = item.q;
+  $("q-sub").textContent = item.sub || "";
+  var fb = $("feedback"); fb.className="feedback"; fb.innerHTML="";
+  $("nextbtn").classList.remove("show");
+  var box = $("opts"); box.innerHTML="";
+  item.opts.forEach(function(opt,i){
+    var b=document.createElement("button");
+    b.className="opt"; b.type="button";
+    b.innerHTML = '<span class="letter">'+LETTERS[i]+'</span><span></span>';
+    b.querySelector("span:last-child").textContent = opt;
+    b.addEventListener("click", function(){ answer(i); });
+    box.appendChild(b);
+  });
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(state.timerId);
+  state.timeLeft = TIME_PER_Q;
+  var bar = $("timer"); bar.style.width="100%"; bar.classList.remove("low");
+  var started = Date.now();
+  state.timerId = setInterval(function(){
+    var left = TIME_PER_Q - (Date.now()-started)/1000;
+    state.timeLeft = Math.max(0,left);
+    bar.style.width = (state.timeLeft/TIME_PER_Q*100)+"%";
+    if(state.timeLeft<=5) bar.classList.add("low");
+    if(left<=0){ clearInterval(state.timerId); timeOut(); }
+  }, 100);
+}
+
+function lockOpts(picked){
+  var item = state.deck[state.idx];
+  var btns = $("opts").querySelectorAll(".opt");
+  btns.forEach(function(b,i){
+    b.disabled = true;
+    if(i===item.ans) b.classList.add("correct");
+    else if(i===picked) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+}
+
+function answer(i){
+  if(state.answered) return;
+  state.answered = true;
+  clearInterval(state.timerId);
+  var item = state.deck[state.idx];
+  var ok = (i===item.ans);
+  lockOpts(i);
+  var gained = 0;
+  if(ok){
+    state.streak++; state.bestStreak = Math.max(state.bestStreak, state.streak);
+    gained = 100 + Math.round(state.timeLeft)*2 + Math.max(0,(state.streak-1))*15;
+    state.score += gained; state.correct++;
+    beep(660,.15,"sine"); setTimeout(function(){ beep(880,.18,"sine"); },110);
+  } else {
+    state.streak = 0; beep(180,.25,"square");
+  }
+  state.history.push({q:item.q, picked: ok? null : item.opts[i], correct:item.opts[item.ans], ok:ok});
+  $("hud-score").textContent = state.score;
+  $("hud-streak").textContent = state.streak + "x";
+  var fb = $("feedback");
+  fb.className = "feedback show " + (ok ? "ok" : "no");
+  fb.innerHTML = ok
+    ? "<b>Bener! +" + gained + " poin" + (state.streak>1 ? " • Streak " + state.streak + "x" : "") + "</b>" + escapeHtml(item.why)
+    : "<b>Salah. Jawaban benernya: " + escapeHtml(item.opts[item.ans]) + "</b>" + escapeHtml(item.why);
+  var nb = $("nextbtn");
+  nb.textContent = (state.idx === state.deck.length-1) ? "Lihat gelar gue →" : "Lanjut →";
+  nb.classList.add("show");
+  nb.focus();
+}
+
+function timeOut(){
+  if(state.answered) return;
+  state.answered = true;
+  var item = state.deck[state.idx];
+  lockOpts(-1);
+  state.streak = 0;
+  state.history.push({q:item.q, picked:"(waktu habis — nggak dijawab)", correct:item.opts[item.ans], ok:false});
+  $("hud-streak").textContent = "0x";
+  beep(160,.3,"square");
+  var fb = $("feedback");
+  fb.className = "feedback show no";
+  fb.innerHTML = "<b>Waktu habis! Jawaban benernya: " + escapeHtml(item.opts[item.ans]) + "</b>" + escapeHtml(item.why);
+  var nb = $("nextbtn");
+  nb.textContent = (state.idx === state.deck.length-1) ? "Lihat gelar gue →" : "Lanjut →";
+  nb.classList.add("show");
+}
+
+function escapeHtml(s){ var d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+function gelarFor(correct, score){
+  if(correct>=10) return {g:"Direktur Ketawa-Ketiwi", d:"Sempurna. Lo paham singkatan, baca situasi, dan logika receh sama lancarnya. Kantor ini terlalu kecil buat bakat lo — atau lo emang udah kelamaan di sini."};
+  if(correct>=8) return {g:"Manager Anti Lembur", d:"Tajam. Lo tau kapan harus gerak, kapan harus pura-pura nggak liat printer rusak. Skill bertahan hidup di kantor: lulus dengan predikat memuaskan."};
+  if(correct>=6) return {g:"Staff Andalan (Katanya)", d:"Lumayan banget. Sebagian kode kantor udah lo kuasai, sisanya lo jawab pakai insting — dan insting lo ternyata bisa diandalkan pas lagi kepepet."};
+  if(correct>=4) return {g:"Spesialis “Siap, Noted”", d:"Setengah paham, setengahnya lagi lo “noted” dulu. Nggak apa-apa, itu juga skill resmi anak kantor. Main sekali lagi, pasti naik kelas."};
+  if(correct>=2) return {g:"Anak Magang Abadi", d:"Lo jawab kayak orang yang baru hari pertama dan langsung disuruh ikut meeting direksi. Santai — semua direktur juga mulai dari sini. Katanya."};
+  return {g:"Korban Meeting Dadakan", d:"Skor ini bukti lo terlalu polos buat dunia kantor. Atau lo jawab sambil merem. Coba lagi — traktir kopi dari yang ngajak main tetap berlaku."};
+}
+
+function finish(){
+  clearInterval(state.timerId);
+  $("prog").style.width="100%";
+  var total = state.deck.length;
+  var acc = Math.round(state.correct/total*100);
+  var g = gelarFor(state.correct, state.score);
+  $("r-gelar").textContent = g.g;
+  $("r-desc").textContent = g.d;
+  $("r-score").textContent = state.score;
+  $("r-correct").textContent = state.correct + "/" + total;
+  $("r-acc").textContent = acc + "%";
+  $("r-streak").textContent = state.bestStreak + "x";
+  var rl = $("review-list"); rl.innerHTML="";
+  state.history.forEach(function(h,i){
+    var div=document.createElement("div"); div.className="ritem";
+    div.innerHTML = '<div class="rq">'+(i+1)+'. '+escapeHtml(h.q)+'</div>' +
+      (h.ok
+        ? '<div class="ra">Jawaban lo: <b class="ok">bener</b> — '+escapeHtml(h.correct)+'</div>'
+        : '<div class="ra">Jawaban lo: <b class="no">'+escapeHtml(h.picked)+'</b><br>Yang bener: <b>'+escapeHtml(h.correct)+'</b></div>');
+    rl.appendChild(div);
+  });
+  if(state.score > state.sessionBest){
+    state.sessionBest = state.score; state.sessionBestGelar = g.g;
+    $("bestbar").style.display="block";
+    $("bestscore").textContent = state.sessionBest;
+    $("bestgelar").textContent = g.g;
+  }
+  saveProgress();
+  /* Stage pass / fail */
+  var banner = $("stage-banner"); banner.className = "stage-banner"; banner.innerHTML = "";
+  var nextBtn = $("nextstagebtn"); nextBtn.classList.add("hidden");
+  var againBtn = $("againbtn");
+  if(state.stageMode){
+    var stNow = STAGES[state.currentStage-1];
+    var passed = state.correct >= PASS_MARK;
+    if(passed){
+      state.completedStages[state.currentStage] = true;
+      if(state.currentStage < 10 && state.unlockedStage < state.currentStage+1) state.unlockedStage = state.currentStage+1;
+      banner.className = "stage-banner show pass";
+      if(state.currentStage >= 10){
+        banner.innerHTML = "<b>🎉 TAMAT! Stage 10 lulus.</b><br>Lo nyelesain semua 10 stage — dari Hari Pertama Magang sampai Direktur &amp; CEO. " + state.correct + "/10 bener di stage terakhir.";
+      } else {
+        banner.innerHTML = "<b>✓ Stage " + state.currentStage + " lulus!</b> " + escapeHtml(stNow ? stNow.name : "") + " — " + state.correct + "/10 bener (minimal " + PASS_MARK + "). Stage " + (state.currentStage+1) + " sekarang kebuka.";
+        nextBtn.classList.remove("hidden");
+        nextBtn.textContent = "Lanjut ke Stage " + (state.currentStage+1) + ": " + (STAGES[state.currentStage] ? STAGES[state.currentStage].name : "") + " →";
+      }
+      againBtn.textContent = "Ulangi stage ini";
+    } else {
+      banner.className = "stage-banner show fail";
+      banner.innerHTML = "<b>Stage " + state.currentStage + " belum lulus.</b> Lo dapet " + state.correct + "/10 bener, butuhnya minimal " + PASS_MARK + ". Ulangi stage ini buat buka stage berikutnya.";
+      againBtn.textContent = "Ulangi stage ini";
+    }
+    renderStageMap();
+    saveProgress();
+  } else {
+    againBtn.textContent = "Main lagi — mode yang sama";
+  }
+  show("view-result");
+  if(state.correct>=6){
+    var card=$("result-card"); var colors=["#ffc91f","#ff5a4e","#0e9a8b","#2456d6"];
+    for(var i=0;i<26;i++){
+      var c=document.createElement("span"); c.className="confetti";
+      c.style.left=(Math.random()*100)+"%"; c.style.background=colors[i%4];
+      c.style.animationDuration=(0.9+Math.random()*0.9)+"s"; c.style.animationDelay=(Math.random()*0.35)+"s";
+      card.appendChild(c);
+      (function(el){ setTimeout(function(){ el.remove(); }, 2400); })(c);
+    }
+  }
+}
+
+/* wiring */
+document.querySelectorAll(".mode").forEach(function(b){
+  b.addEventListener("click", function(){ startGame(b.getAttribute("data-mode")); });
+});
+$("nextbtn").addEventListener("click", function(){
+  if(state.idx < state.deck.length-1){ state.idx++; renderQ(); } else { finish(); }
+});
+$("quitbtn").addEventListener("click", function(){ clearInterval(state.timerId); renderStageMap(); show("view-home"); });
+$("againbtn").addEventListener("click", function(){ if(state.stageMode){ startStage(state.currentStage); } else { startGame(state.mode); } });
+$("nextstagebtn").addEventListener("click", function(){ if(state.currentStage < 10) startStage(state.currentStage+1); });
+$("menubtn").addEventListener("click", function(){ renderStageMap(); show("view-home"); });
+var _resetBtn = $("resetProgressBtn");
+if(_resetBtn) _resetBtn.addEventListener("click", function(){
+  if(state.unlockedStage <= 1 && !Object.keys(state.completedStages).length && state.sessionBest <= 0){
+    toast("Belum ada progres yang kesimpan.");
+    return;
+  }
+  clearProgress();
+});
+renderStageMap();
+if(state.sessionBest > 0){
+  $("bestbar").style.display = "block";
+  $("bestscore").textContent = state.sessionBest;
+  $("bestgelar").textContent = state.sessionBestGelar || "";
+}
+$("copybtn").addEventListener("click", function(){
+  var total=state.deck.length;
+  var stageLine = state.stageMode ? ("Stage: " + state.currentStage + " — " + (STAGES[state.currentStage-1] ? STAGES[state.currentStage-1].name : "") + (state.correct >= PASS_MARK ? " (LULUS)" : " (belum lulus)") + "\n") : "";
+  var text = "Gue barusan main Tebak-Tebakan Kantor.\n" + stageLine +
+    "Gelar gue: " + $("r-gelar").textContent + "\n" +
+    "Skor: " + state.score + " poin • Bener " + state.correct + "/" + total + " • Streak terbaik " + state.bestStreak + "x\n" +
+    "Berani lawan? Yang kalah traktir kopi.";
+  function done(){ toast("Hasil disalin — tinggal tempel ke grup kantor lo."); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopy(text); done(); });
+  } else { fallbackCopy(text); done(); }
+});
+function fallbackCopy(text){
+  var ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  ta.remove();
+}
+</script>
+</body>
+</html>
